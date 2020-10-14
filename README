@@ -1,0 +1,304 @@
+Project1: Phase 1&2
+Zack White
+Dr. Christian Grant
+Intro to Text Analytics
+
+4/25/2017
+
+(NOTE 10/14/2020: This project was done years ago for a NLP course. There are several improvements to be done with it.)
+
+-------PURPOSE-------
+========Phase 1=============
+The goal of this program is to download latin books and to format them to put the information
+into a sqlite3 database.
+=========Phase 2=============
+Convert table to fts4 and make a user interface that searches for the word and either makes a graph or prints allpassages of the word.
+If the word is english then it is translated to latin
+If they want a graph of the number of uses of the word per book, then return a bar chart with the number of uses of the word ordered frm most 
+to least
+If they dont want a chart then they get a list from a passage the word was used and the URL to the book
+-------DESCRIPTION-------
+============Phase 1==================
+Downloads 7 latin books and saves them txt file as a latin-1
+Creates database named latin_collection.db
+Reads and formats the data
+insert data into latinbooks
+table in TABLE latinbooks has the following format
+(title, book, language, author, date, chapter, verse, passage, link)
+============Phase 2=====================
+Virtual table is created latin_fts with format (title, passage, link)
+User Interface starts. Goes as Follows:
+1.Asks what word you are searching
+	input word for searching
+2.Asks if the word is ENgling
+	if yes the word is translated to latin
+	if no the word is kept as is
+3.Asks if you want a graph
+	if yes it searches the database for that word in all 7 books and prints a graph from highest to lowest  of the number of times
+		the word appears in the bok
+	if no then is searches the entire latin_fts table for that word and print outs the passage and URL
+
+-------HOW TO INSTALL-------
+Create and activate your Python3 virtual environment.Once you are in the project1_white_zack/project1 folder do the following. (This program works with 3.4,3.5, and 3.6)
+then do the following commands:
+1. pip3 install -r requirements.txt
+2. pip3 install .
+3. python3 main.py (if you want to run the main program)
+In phase 2 its still the same
+--------Assumptions-----------
+I assume that using books of the same style and format were allowed since that would an easier time to bringing the documents over
+
+-------KNOWN BUGS-------
+test_2_population.py will fail if latin_collection.db is not removed since it will double the number of rows
+test_3_populateVirtualTable.py will fail if latin_collection.db is not removed since it will double the number of rows in table latin_fts
+-------RESOURCES-------
+Python 3 documentation
+
+BeautifulSoup documentation
+
+pytest documentation
+
+matplotlib documentation
+
+the janux board discussion about requests
+-------HOW TO TEST-------
+Go to project1_white_zack/project then
+1. python3 setup.py test
+thats about it... 
+-------HOW THE TESTS WORKS-------
+==============Phase 1=======================
+test_1_extraction.py
+
+test_extraction.py compares and tests the number of characters in the files made from the extracted books. 
+If the books have the expected character count, then (in theory) they were downloaded correctly
+
+_____Books______|__#_of_Chars_Expected__
+minucius | 85270
+benedict | 95717
+disciplina | 110998
+deexpugnatione | 91181
+epistaustras | 36503
+mirabilia | 33535
+raoul | 273245
+
+def charinfile(name)
+1. Opens the file and reads it
+2. finds the length of the the string in the file which is the character count
+
+def test_count
+1. runs extraction from project1 
+2.runs through the list of files and expected numebr of characters
+3 . compares the length of file with the expected count
+
+test_2_population.py
+
+test_2_population.py counts the number of rows in the table latinbooks in the latin_collection database and compares it to the expected number of rows collected for the test
+If the number of rows matches the number of expected rows, then the database should (in theory) have been filled correctly
+The number of expected rows is 5351
+
+def rowcount()
+1. connect to sqlite3 db latin_collection and create cursor
+2. write a query to count the number of rows in the table latinsbooks
+3. convert the result into a string, format it, then convert it to a integer
+
+def test_rowcount()
+1. runs populate from project1
+2. the test simply compares the rowcount with 5351
+
+==================Phase 2=====================
+test_3_populateVirtualTable.py
+test_3_populateVitualTable acts like test 2. It counts the number of rows in latin_fts virtual table and compares it to the expected number of rows collected for the test
+If the number of rows matches the number of expected rows, then the database should (in theory) have been filled correctly
+The number of expected rows is 5351
+
+def rowcount()
+1. connect to sqlite3 db latin_collection and create cursor
+2. write a query to count the number of rows in the table latin_fts
+3. execue query, fetch result, and return result
+
+def test_rowcount()
+1. runs populateVirtualTable from project1
+2. the test simply compares the rowcount with 5351
+
+test_4_searchFTS.py
+test_4_searchFTS test the search method searchFTS. It searches a common word "cum" (since it is a common word don't judge me) and counts the number entrys in all latin_Fts virtual table. The expected result is 535
+
+def test_phrasecount()
+1.first creats the virtual table since it freaks out otherwise
+2.runs searchFTS, finds the length of the list of phrases and compares it to 535 for the test
+
+test_5_translateENLA.py
+test_5_translateENLA.py test the translation api by translating a common word "what" to "terram". They are comparred for the test
+
+def test_5_translateENLA 
+1. runs the translation api on "what", if it translates to terram then it passes the test
+
+-------HOW THE CODE WORKS-------
+
+main.py
+main.py imports the methods from project1
+main()
+
+============Phase 1==============================
+project1.py
+there are two methods extract() and populate()
+The file Imports:
+os: for bash commands
+html: used for unescape method on the books to maintain special characters when writing the special characters to the the books respective txt file
+bs4: Beautifulsoup used to find tags in of the files writen
+sqlite3: used to make latin_collection database, table latinbooks, and insert data into tables
+urllib.request: used for webscraping the bookdata from the websites
+
+There are two predefined arrays:
+bookURL which contains the urls for web scrapping the 7 books
+books this is only here for to have meaningful and easy to find filenames for the respective books
+
+def extract()
+Summary:
+fetches bookdata from 7 books and saves it into 7 txt files
+
+The function works as follows:
+1. set iter = 0
+2. start a forloop. run the for loop the length of the bookURL lists
+3. using urllib.request, download the contents at the current iteration of bookURL
+4.read and decode the data as latin-1 and set it to bookdata
+5.write a string that writes out a path to put the current book into the docs folder
+6. open file with the path of the string above set to write
+7. i.use html.unescape on the bookdata to preserve the html symbols
+  ii. write the unescape bookdata to the file
+8. close file
+9. increment iter by 1
+10. for loop ends when the bookURL list ends
+11. method ends
+
+def populate()
+Summary:
+creates the database latin_collections and table latinbooks if it doesnt exists, formats the data, then inserts data into table
+The function works as follows:
+1. connects to the database latin_collection
+2. creates cursor
+3. write a string that creates table latinbooks if does not exists with the following schema
+(title TEXT, book TEXT, language TEXT, author TEXT, date TEXT, chapter TEXT, verse TEXT, passage TEXT, link TEXT)
+4. execute string statement
+5. Start assigning values to be put into the table that, after reviewing the text, are either not with the data or are constant
+6. set book, dates = None and language = 'latin'
+       7.start a for loop that runs in through books and bookURL in parallel (NOTE this is the first time I got zip() working so thats cool)
+8.set filename string to the path of the current book text file
+9.set soup to a beautifulsoup of the bookdata with lxml
+10.set verse = 0
+11. title  is set to the text of title tag. Strip it of whitespace for good measure
+12. set author to None
+13. start of an if condition. THere is a scenario where if ":" is in the title, then the authors name will be left and the title will be to the right. 
+So if the value of find(":") on title is > -1, then it is in title. The following code ensues
+14. set deliminator to the position of ":" in title
+15. author is equal to all characters left of the deliminator
+16. title is equal to all character 2 to the right of the deliminator. If statement ends
+17.set paragraphs to all content with the p tag in the soup
+18. set chapter to None
+19. start for loop for paragraph in all found paragraphs
+18. conditional starts. if "<b>" in found in current paragraph and chapter is none, then this is the first chapter.
+19. set chapter to the text of the paragraph and strip for good measure
+20. if "<b>" in in the current paragraph and chapter is not none, then this is jsut an ordinary chapter name
+21. set chapter to the text of the paragraph and strip for good measure
+(NOTE: there is probably a better way to do this but when I didnt find the first chapters this way it didnt work for some reason. I'll look into it later to see if I can optimize it in some way)
+22. if "<b>" in not in current paragraph and chapter is not none, then this is content of the chapter
+23. set passage to the text of the passage. replace "\n", "?", and "!" to ".". Then split by period
+24. for loop starts. THis runs through the passage list of all suspected sentenses. p is the sentense in passage
+25. if p is not blank
+24. then set  query to the current variable of the following
+(title, book, language, author, dates, chapter, verse, p, url)
+26. execute the insert statement to insert the data into table latinbooks
+ 'INSERT INTO latinbooks VALUES (?,?,?,?,?,?,?,?,?)', query
+ commit changes
+ increment verse by 1
+27. all conditions and for loops end
+28. clsoe connection
+======================Phase 2======================
+createVirtualTable()
+summary: Creates the virtual table latin_fts
+
+1.establishes to latin_collection.db
+2.creates cursor
+3.makes a string that creates Virtual Table latin_fts if it doesnt exists as an fts4 table
+4.executes string command
+5.saves changes
+6.closes connection
+
+populateVirtualTable
+summary:populates virtual table latin_fts the rows from latinbooks
+
+1.establishes connection to latin_collection.db
+2.creates cursor
+3.executes a query tahts selects the titles, passages, and links from latinbooks
+4.initialize list names data
+5.create for loop that interates the rows of the query above
+6.append rows in to data list
+7.executes many inserts statements that puts the data in data into latin_fts
+8.save changes to database
+9.clsoe connect
+
+SearchFTS(word)
+summary:searches latin_fts table for the input word
+
+1.creates connection to latin_collection.db
+2.creates cursor
+3.initiallizes list found
+4.executes query that selects all rows with the inputed word in passage
+5.start for loop to iterate through rows found in query
+6.append row in query to list until loop ends
+7.save changes
+8.close connection
+9. if statements. If the list is empty then change the list to a string that say "No results found"
+10. out of if statement, return found variable (whether if its a list or string)
+
+translateENLA(word)
+summary:Translates the input english word to latin with the mymemory translation api
+
+1.creates string URL the URL of the api that inputs the word to translates english to latin
+2.requests to get the infomation behind the URL
+3.set translate to requested info as json
+4.go to the matches part of the json
+5.if its empty then there is no translation found
+6.else return the first element that calls the translation
+
+graph(word)
+summary:Takes the word, finds it in the database, counts the number of times it shows up in a book, stores results of the book word count 
+in a dict, repeats for all 7 books, then organizes the dicts by the number of word occurances, then plots them
+
+1.apply use('Agg') to have windows Pop up
+2.establish connection to latin_collection.db and cursor
+3.selects all distincts title
+4.fetchall title
+5.create dictionary bookwordcount
+6.interate throug titlelist
+7.executes statement that selects all rows from the current book and chosen word
+8.fecthall rows from above
+9.make dictonary entry of the current book as the key and the number of occurances of the selected word in the current book
+10.change the dictionary to a tuple and sort by value
+11.initialize two list
+12.append value to one list and key to other list
+13. start graph stuff
+14. create a plot with 7 bar with length of .35. They are the height of the values
+15. label the axises and label the bar 
+16. show plot
+
+UserInterface()
+summary:User interface asks for the word that is being searched, if its english, and if you wan agraph. Easy and simple
+
+1.Input the word you are looking for
+2.input yes to translate the english word or no if its latin
+3.if yes then translate the word with TranslateENLA
+4.if no then continue
+5.input ues for graph, no for just a list
+6.if yes then search and plot for the word with graph(word)
+7.if no then search for word with searchFTS(word) 
+8. print out the passage with the word in it and the link to where the book is found
+
+phrasecount(phraselist, word)
+summary:This is meant to assist graph. It counts the number of occurances in the list
+1.initiallize total
+2.iterate through the list of phrases
+3. count and add to the total
+4. for loop ends and returns the total
+
+
